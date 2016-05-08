@@ -58,6 +58,7 @@ int main()
 
 	//if((err = getaddrinfo()))
 
+
 	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
 		err = errno;
