@@ -5,10 +5,11 @@
  *      Author: LeoBrilliant
  */
 
-#ifndef CONNECTRETRY_H_
-#define CONNECTRETRY_H_
+#ifndef CONNECTRETRY_CPP_
+#define CONNECTRETRY_CPP_
 
 #include <sys/socket.h>
+#include "TradingClient.h"
 
 #define MAXSLEEP 128
 
@@ -30,4 +31,4 @@ int connect_retry(int sockfd, const struct sockaddr * addr, socklen_t alen)
 
 
 
-#endif /* CONNECTRETRY_H_ */
+#endif /* CONNECTRETRY_CPP_ */
