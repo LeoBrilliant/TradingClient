@@ -13,7 +13,8 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <arpa/inet.h>
-
+#include <vector>
+#include <iostream>
 #include "ConnectRetry.h"
 
 #define MAXADDRLEN 256
@@ -22,6 +23,8 @@
 #define SERVER_PORT 20000
 
 extern int connect_retry(int, const struct sockaddr *, socklen_t);
+
+using namespace std;
 
 void print_uptime(int sockfd)
 {
@@ -47,7 +50,12 @@ int main()
 	socklen_t socklen = sizeof(server_addr);
 	int sockfd, err;
 	char server_ip[] = "192.168.31.134";
+	int ret;
+	vector<int> vsock;
+	const int counter = 10;
 
+	char buf[1024];
+	int len = 0;
 //	hint.ai_flags = 0;
 //	hint.ai_family = 0;
 //	hint.ai_socktype = SOCK_STREAM;
@@ -58,24 +66,46 @@ int main()
 
 	//if((err = getaddrinfo()))
 
-
-	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	for(int i = 0; i < counter; ++i)
 	{
-		err = errno;
+		sockfd = -1;
+		if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		{
+			err = errno;
+		}
+
+		memset(&server_addr, 0, sizeof(server_addr));
+		server_addr.sin_family = AF_INET;
+		inet_aton(server_ip, &server_addr.sin_addr);
+		server_addr.sin_port = htons(SERVER_PORT);
+
+		ret = connect_retry(sockfd, (const sockaddr*)&server_addr, socklen);
+		if(ret != 0)
+			err = errno;
+		else
+		{
+			vsock.push_back(sockfd);
+			//print_uptime(sockfd);
+		}
 	}
 
-	bzero(&server_addr, sizeof(server_addr));
-	server_addr.sin_family = AF_INET;
-	inet_aton(server_ip, &server_addr.sin_addr);
-	server_addr.sin_port = htons(SERVER_PORT);
-	if(connect_retry(sockfd, (const sockaddr*)&server_addr, socklen) < 0)
-		err = errno;
-	else
+	for(int i = 0; i < counter; ++i)
 	{
-		print_uptime(sockfd);
+		sprintf(buf, "%s: %d", server_ip, vsock[i]);
+		len = strlen(buf);
+		write(vsock[i], buf, len);
+		printf("write: %s\n", buf);
 	}
 
-	return 0;
+	printf("write finished, sleep 1s\n");
+	sleep(1);
+
+	for(int i = 0; i < counter; ++i)
+	{
+		close(vsock[i]);
+	}
+
+	return err;
 }
 
 
